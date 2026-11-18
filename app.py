@@ -369,11 +369,11 @@ with left:
                         entry = {"role":"assistant", "content":result.text, "sources":result.sources}
                         st.session_state.messages.append(entry)
                         st.session_state.previous_response_id = result.response_id
-                        if speech_on and auto_speak:
+                        if speech_on:
                             try:
                                 speech = synthesize_reply(OpenAI(timeout=60, max_retries=1), result.text, language, voice_choice.lower(), speed)
                                 entry["audio"], entry["audio_sig"] = speech, (language,voice_choice,speed)
-                                st.audio(speech, format="audio/mp3", autoplay=True)
+                                st.audio(speech, format="audio/mp3", autoplay=True, key=f"alma_autoplay_{len(st.session_state.messages)}")
                             except Exception as ex:
                                 st.caption(tr("Respuesta de texto lista; audio no disponible.", "Text reply is ready; audio unavailable.",language))
                                 st.caption(type(ex).__name__)
