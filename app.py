@@ -15,6 +15,17 @@ from alma_voice import transcribe_recording, synthesize_reply, DEFAULT_SPEED, DE
 
 load_dotenv()
 
+# Streamlit Cloud stores private values in st.secrets, not .env.
+# Copy only known ALMA settings into the environment for existing backend code.
+for secret_name in ('OPENAI_API_KEY', 'ALMA_VECTOR_STORE_IDS', 'ALMA_VECTOR_STORE_ID', 'ALMA_MODEL'):
+    if not os.getenv(secret_name):
+        try:
+            secret_value = st.secrets[secret_name]
+            if secret_value:
+                os.environ[secret_name] = str(secret_value)
+        except Exception:
+            pass
+
 ASSETS_DIR = Path(__file__).resolve().parent / 'assets'
 ICON_FILE = ASSETS_DIR / 'petsrwise_icon.png'
 WORDMARK_FILE = ASSETS_DIR / 'petsrwise_logo_original.png'
