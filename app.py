@@ -22,6 +22,14 @@ from alma_voice import DEFAULT_SPEED, synthesize_reply, transcribe_recording
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env")
+for secret_name in ("OPENAI_API_KEY", "ALMA_VECTOR_STORE_IDS", "ALMA_VECTOR_STORE_ID", "ALMA_MODEL"):
+    if not os.getenv(secret_name):
+        try:
+            secret_value = st.secrets[secret_name]
+            if secret_value:
+                os.environ[secret_name] = str(secret_value)
+        except Exception:
+            pass
 ASSETS = ROOT / "assets"
 LOGO = ASSETS / "petsrwise_logo_original.png"
 ICON = ASSETS / "petsrwise_icon.png"
@@ -376,7 +384,7 @@ with left:
                                 st.audio(speech, format="audio/mp3", autoplay=True, key=f"alma_autoplay_{len(st.session_state.messages)}")
                             except Exception as ex:
                                 st.caption(tr("Respuesta de texto lista; audio no disponible.", "Text reply is ready; audio unavailable.",language))
-                                st.caption(type(ex).__name__)
+                                st.caption(f"{type(ex).__name__}: {str(ex)[:500]}")
                     except Exception as ex:
                         st.error(tr("Error de conexión a OpenAI; revisa credenciales, vectores o red.",
                                     "OpenAI connection error; check credentials, vector stores or internet.",language))

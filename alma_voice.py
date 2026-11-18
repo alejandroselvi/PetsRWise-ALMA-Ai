@@ -59,12 +59,22 @@ def synthesize_reply(client, text: str, language: str = 'Español',
     speed = float(speed)
     if not 0.80 <= speed <= 1.60:
         raise ValueError('Supported UI speech speed is from 0.80x to 1.60x')
-    response = client.audio.speech.create(
-        model='gpt-4o-mini-tts',
-        voice=voice,
-        input=text[:3000],
-        instructions=speech_instructions(language),
-        speed=speed,
-        response_format='mp3',
-    )
-    return response.content
+    try:
+        response = client.audio.speech.create(
+            model='gpt-4o-mini-tts',
+            voice=voice,
+            input=text[:3000],
+            instructions=speech_instructions(language),
+            speed=speed,
+            response_format='mp3',
+        )
+        return response.content
+    except Exception:
+        response = client.audio.speech.create(
+            model='tts-1',
+            voice=voice,
+            input=text[:3000],
+            speed=speed,
+            response_format='mp3',
+        )
+        return response.content
