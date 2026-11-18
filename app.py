@@ -61,9 +61,14 @@ html, body, [class*="css"] {font-family: Inter, ui-sans-serif, -apple-system, Bl
 .prw-note {font-size:.77rem;color:#7D7480;line-height:1.5;}
 .prw-legal {font-size:.76rem;color:#867D89;text-align:center;margin-top:20px;padding:12px 0;border-top:1px solid #F4E6ED;}
 
-[data-testid="stChatInput"] {position:fixed!important;left:286px!important;right:24px!important;bottom:18px!important;z-index:1002!important;width:auto!important;max-width:none!important;padding:8px 12px!important;border-radius:22px!important;background:rgba(255,255,255,.97)!important;border:1px solid #EED8E4!important;box-shadow:0 10px 32px #5A244912!important;backdrop-filter:blur(12px)!important;}
+[data-testid="stChatInput"] {position:fixed!important;left:286px!important;right:24px!important;bottom:18px!important;z-index:1002!important;width:auto!important;max-width:none!important;padding:8px 12px!important;border-radius:22px!important;background:rgba(255,255,255,.98)!important;border:1.5px solid #EFD2E1!important;box-shadow:0 12px 36px #5A244914!important;backdrop-filter:blur(12px)!important;}
 [data-testid="stChatInput"] textarea {min-height:58px!important;font-size:1rem!important;border-radius:18px!important;line-height:1.5!important;padding:14px 16px!important;}
+[data-testid="stChatInput"] button {border-radius:50%!important;width:42px!important;height:42px!important;margin:6px!important;}
+[data-testid="stChatInput"] [data-testid="stChatInputAudioButton"] {color:#C52F7D!important;background:#FFF1F7!important;border:1px solid #F2C8DC!important;}
 .block-container {padding-bottom:110px!important;}
+@media (max-width: 768px) {
+  [data-testid="stChatInput"] {left:12px!important;right:12px!important;bottom:10px!important;}
+}
 </style>
 ''', unsafe_allow_html=True)
 
