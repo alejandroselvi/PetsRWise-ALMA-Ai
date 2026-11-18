@@ -1,11 +1,6 @@
 .env
-.env.*
-!.env.example
 .venv/
 .venx/
 __pycache__/
-*.py[cod]
-.pytest_cache/
+*.pyc
 .streamlit/secrets.toml
-*.log
-.DS_Store
