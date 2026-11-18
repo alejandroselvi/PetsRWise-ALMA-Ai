@@ -65,7 +65,7 @@ st.markdown("""
 [data-testid="stChatMessage"]{background:rgba(255,255,255,.96)!important;border:1px solid #F3DDE8!important;border-radius:20px!important;box-shadow:0 6px 18px #A73A7012!important;}
 [data-testid="stChatMessage"] p{line-height:1.55;font-family:'Avenir Next',sans-serif!important;}
 [data-testid="stChatMessage"] [data-testid="stChatMessageAvatarAssistant"] img,[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarUser"] img{object-fit:cover!important;border-radius:50%!important;}
-[data-testid="stChatInput"]{position:fixed!important;z-index:1000!important;left:calc(19rem + 2.1rem)!important;right:2.1rem!important;bottom:.95rem!important;max-width:none!important;background:transparent!important;padding:0!important;}
+[data-testid="stChatInput"]{position:fixed!important;z-index:1000!important;left:calc(19rem + 2.1rem)!important;right:2.1rem!important;bottom:1.35rem!important;max-width:none!important;background:transparent!important;padding:0!important;}
 [data-testid="stChatInput"] > div{max-width:none!important;border-radius:26px!important;border:1px solid #E7DFE6!important;background:#FFFFFF!important;box-shadow:0 8px 28px #34213718!important;min-height:58px!important;}
 [data-testid="stChatInput"] textarea{min-height:58px!important;max-height:120px!important;border:0!important;border-radius:26px!important;padding:15px 18px!important;font-family:'Avenir Next',sans-serif!important;font-size:.96rem!important;resize:none!important;}
 [data-testid="stChatInput"] button{border-radius:50%!important;}
@@ -109,7 +109,7 @@ div[data-testid="stElementContainer"]:has(> [aria-label="alma_fixed_composer"]){
   [data-testid="stMainBlockContainer"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1){width:100%!important;max-width:100%!important;flex:1 1 100%!important;}
   [data-testid="stSidebar"]{display:none!important;width:0!important;}
   [data-testid="stSidebar"][data-state="expanded"]{display:block!important;width:min(82vw,320px)!important;}
-  [data-testid="stChatInput"]{left:.65rem!important;right:.65rem!important;bottom:.95rem!important;}
+  [data-testid="stChatInput"]{left:.65rem!important;right:.65rem!important;bottom:1.35rem!important;}
   .prw-hero > .prw-face{display:none!important;}
   .prw-hero{min-height:100px!important;padding:16px!important;}
 }
