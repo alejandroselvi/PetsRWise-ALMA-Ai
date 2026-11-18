@@ -10,6 +10,7 @@ import hashlib
 import html
 import os
 from pathlib import Path
+import inspect
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -226,11 +227,24 @@ with right:
                      "ALMA is not a veterinarian or a substitute for a consultation. For real emergencies, seek veterinary care immediately. Don't enter real cases or personal information in this demo.",language)
                 + "</p></div>",unsafe_allow_html=True)
 
-profile = AlmaProfile(species=species.lower(), pet_name=pet_name, breed=breed,
-                      age=float(pet_age), sex=pet_sex, language=language,
-                      country=country, state=region, city=city)
+profile_values = {
+    "species": species.lower(),
+    "pet_name": pet_name,
+    "breed": breed,
+    "age": float(pet_age),
+    "sex": pet_sex,
+    "language": language,
+    "country": country,
+    "state": region,
+    "city": city,
+}
+profile_parameters = inspect.signature(AlmaProfile).parameters
+profile = AlmaProfile(**{name: value for name, value in profile_values.items() if name in profile_parameters})
 model = os.getenv("ALMA_MODEL", "gpt-5.4-mini")
-signature = (profile.species, profile.pet_name, profile.breed, profile.age, profile.sex,
+profile_breed = getattr(profile, "breed", breed)
+profile_age = getattr(profile, "age", float(pet_age))
+profile_sex = getattr(profile, "sex", pet_sex)
+signature = (profile.species, profile.pet_name, profile_breed, profile_age, profile_sex,
              profile.language, profile.country, profile.state, profile.city,
              tuple(vectors), model, web_on)
 if st.session_state.get("profile_signature") not in (None, signature):
