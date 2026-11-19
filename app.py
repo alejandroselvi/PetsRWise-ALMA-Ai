@@ -115,8 +115,9 @@ div[data-testid="stElementContainer"]:has(> [aria-label="alma_fixed_composer"]){
 @media(max-width:768px){
   [data-testid="stMainBlockContainer"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2){display:none!important;}
   [data-testid="stMainBlockContainer"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1){width:100%!important;max-width:100%!important;flex:1 1 100%!important;}
-  [data-testid="stSidebar"]{display:none!important;width:0!important;}
-  [data-testid="stSidebar"][data-state="expanded"]{display:block!important;width:min(82vw,320px)!important;}
+  [data-testid="stSidebar"]{width:min(88vw,350px)!important;max-width:min(88vw,350px)!important;}
+  [data-testid="stSidebar"] .block-container{padding:1rem 1.1rem 2rem!important;}
+  [data-testid="stSidebar"] [data-testid="stExpander"]{margin:.25rem 0!important;}
   [data-testid="stChatInput"]{left:.65rem!important;right:.65rem!important;bottom:1.35rem!important;}
   .prw-hero > .prw-face{display:none!important;}
   .prw-hero{min-height:100px!important;padding:16px!important;}
@@ -150,92 +151,19 @@ with st.sidebar:
                   "🔒 Internal prototype. Use fictional animals and scenarios only.", language))
     st.caption("© PetsRWise · ALMA Web v0.7")
 
-left, right = st.columns([2.42, 1.1], gap="large")
-
-# Right settings panel. These are the same values your existing OpenAI backend expects.
-with right:
-    st.markdown(f"<div class='prw-panel-title'>🐾 {tr('Perfil de mascota','Pet profile',language)}</div>", unsafe_allow_html=True)
-    st.caption(tr("Personaliza el caso ficticio antes de conversar.", "Set up a fictional case before chatting.", language))
-    species_choices = {
-        "Perro": "Dog", "Gato": "Cat", "Caballo": "Horse", "Bovino": "Cattle",
-        "Oveja": "Sheep", "Cabra": "Goat", "Cerdo": "Pig", "Conejo": "Rabbit",
-        "Ave": "Bird", "Reptil": "Reptile",
-    }
-    species = st.selectbox(tr("Especie", "Species", language), list(species_choices),
-                           format_func=lambda s: s if language == "Español" else species_choices[s], key="prw_species")
-    pet_name = st.text_input(tr("Nombre ficticio", "Fictional pet name", language), value="Max", max_chars=50)
-
-    breed_options = {
-        "Perro": ["Criollo / Mestizo", "Golden Retriever", "Labrador Retriever", "Pastor Alemán", "Bulldog", "French Poodle", "Chihuahua", "Beagle", "Otra / No sé"],
-        "Gato": ["Criollo / Mestizo", "Persa", "Siamés", "Maine Coon", "Ragdoll", "Bengalí", "Otra / No sé"],
-        "Caballo": ["Criollo", "Cuarto de Milla", "Paso Fino", "Árabe", "Frisón", "Otra / No sé"],
-        "Bovino": ["Criollo", "Holstein", "Brahman", "Hereford", "Angus", "Otra / No sé"],
-        "Oveja": ["Criollo", "Dorper", "Merino", "Otra / No sé"],
-        "Cabra": ["Criolla", "Saanen", "Boer", "Alpina", "Otra / No sé"],
-        "Cerdo": ["Criollo", "Yorkshire", "Landrace", "Duroc", "Otra / No sé"],
-        "Conejo": ["Criollo / Mestizo", "Holandés", "Mini Lop", "Angora", "Otra / No sé"],
-        "Ave": ["Mestiza", "Canario", "Periquito", "Papagayo", "Gallina", "Otra / No sé"],
-        "Reptil": ["Desconocida", "Gecko", "Iguana", "Serpiente", "Tortuga", "Otra / No sé"],
-    }
-    breed_es = breed_options.get(species, ["Otra / No sé"])
-    breed = st.selectbox(tr("Raza", "Breed", language), breed_es,
-                         format_func=lambda b: b if language == "Español" else {
-                             "Criollo / Mestizo":"Mixed / Creole", "Criollo":"Creole", "Criolla":"Creole",
-                             "Otra / No sé":"Other / Unknown", "Desconocida":"Unknown", "Mestiza":"Mixed",
-                         }.get(b, b), key="prw_breed")
-
-    age, sex = st.columns(2)
-    with age:
-        pet_age = st.number_input(tr("Edad (años)", "Age (years)", language), min_value=0.0, max_value=100.0, value=3.0, step=0.5)
-    with sex:
-        sex_es = ["Hembra", "Macho", "No sé"]
-        pet_sex = st.selectbox(tr("Sexo", "Sex", language), sex_es,
-                               format_func=lambda s: s if language == "Español" else {"Hembra":"Female", "Macho":"Male", "No sé":"Unknown"}[s])
-
-    st.markdown(f"<div class='prw-section'>📍 {tr('Ubicación','Location',language)}</div>", unsafe_allow_html=True)
-    country = st.selectbox(tr("País", "Country", language), ["Estados Unidos", "Venezuela"])
-
-    state_options = {
-        "Estados Unidos": ["Florida", "California", "Texas", "New York", "New Jersey", "Illinois", "Pennsylvania", "Washington", "Georgia", "Arizona", "Otro estado"],
-        "Venezuela": ["Distrito Capital", "Miranda", "Zulia", "Carabobo", "Aragua", "Lara", "Anzoátegui", "Bolívar", "Táchira", "Falcón", "Otro estado"],
-    }
-    region = st.selectbox(tr("Estado / región", "State / region", language), state_options[country],
-                          format_func=lambda s: s if language == "Español" or country == "Estados Unidos" else s)
-    city = st.text_input(tr("Ciudad", "City", language), value="Miami" if country == "Estados Unidos" else "Caracas", max_chars=70)
-    st.caption(tr("Ubicación escrita manualmente; no utilizamos GPS.",
-                  "Manually entered location; GPS isn't enabled.", language))
-    st.divider()
-    st.markdown(f"<div class='prw-section'>🎙️ {tr('Voz de ALMA','ALMA voice',language)}</div>", unsafe_allow_html=True)
-    speech_on = st.toggle(tr("Activar voz y micrófono", "Enable voice and microphone", language), value=st.session_state.get("alma_voice_enabled", True), key="alma_voice_toggle")
-    st.session_state.alma_voice_enabled = speech_on
-    voice_choice = st.selectbox(tr("Timbre", "Voice", language), ["Marin", "Coral", "Shimmer"], disabled=not speech_on)
-    speed = st.slider(tr("Velocidad", "Speech speed", language), .80, 1.60, DEFAULT_SPEED, .05, disabled=not speech_on)
-    auto_speak = st.toggle(tr("Reproducir automáticamente", "Auto-play answers", language), value=st.session_state.get("alma_autoplay_enabled", True), disabled=not speech_on, key="alma_autoplay_toggle")
-    st.session_state.alma_autoplay_enabled = auto_speak
-    if speech_on and st.button(tr("▶ Probar voz", "▶ Preview voice", language), use_container_width=True):
-        test_text = tr("Hola, soy ALMA, la asistente de inteligencia artificial de PetsRWise.",
-                       "Hello, I'm ALMA, the PetsRWise AI assistant.", language)
-        try:
-            with st.spinner(tr("Generando audio…", "Generating audio…", language)):
-                preview = synthesize_reply(OpenAI(timeout=60, max_retries=1),
-                                           test_text, language, voice_choice.lower(), speed)
-            st.audio(preview, format="audio/mp3")
-        except Exception as ex:
-            st.warning(tr("No fue posible generar audio.", "Couldn't generate audio.", language))
-            st.caption(type(ex).__name__)
-    st.caption(tr("Español latinoamericano / inglés estadounidense. Voz sintética, por turnos.",
-                  "LatAm Spanish / US English. Synthetic, turn-based speech.", language))
-    st.divider()
-    st.markdown(f"<div class='prw-section'>📚 {tr('Fuentes de información','Information sources',language)}</div>", unsafe_allow_html=True)
-    web_on = st.toggle(tr("Permitir búsqueda web", "Allow web search", language), value=True)
-    vectors = vector_ids_from_env()
-    st.caption(f"{len(vectors)} Vector Store(s) " + tr("configurados", "configured", language))
-    if not vectors:
-        st.warning(tr("No hay vectores configurados.", "No vector stores configured.", language))
-    st.markdown(f"<div class='prw-alert'><strong>⚠️ {tr('Importante','Important',language)}</strong><p>"
-                + tr("ALMA no es veterinaria ni reemplaza una consulta. En una emergencia real, acude inmediatamente a un centro veterinario. No ingreses información personal ni casos reales en esta demo.",
-                     "ALMA is not a veterinarian or a substitute for a consultation. For real emergencies, seek veterinary care immediately. Don't enter real cases or personal information in this demo.",language)
-                + "</p></div>",unsafe_allow_html=True)
+species = mobile_species
+pet_name = mobile_pet_name
+breed = mobile_breed
+pet_age = mobile_pet_age
+pet_sex = mobile_sex_choice
+country = mobile_country
+region = mobile_region
+city = mobile_city
+speech_on = mobile_speech_on
+voice_choice = mobile_voice_choice
+speed = mobile_speed
+auto_speak = mobile_auto_speak
+web_on = mobile_web_on
 
 profile_values = {
     "species": species.lower(),
@@ -444,3 +372,50 @@ with left:
                        "**Upcoming:** lip-synced avatar, verified hospital directory, and handoff to licensed professionals.",language))
     st.markdown("<div class='prw-footer'>© PetsRWise · ALMA Web v0.7 · "
                 "<a href='https://www.petsrwise.com/' target='_blank' rel='noopener noreferrer'>petsrwise.com</a></div>",unsafe_allow_html=True)
+
+with st.sidebar:
+    with st.expander(tr("🐾 Perfil de mascota", "🐾 Pet profile", language), expanded=False):
+        species_choices_mobile = {
+            "Perro": "Dog", "Gato": "Cat", "Caballo": "Horse", "Bovino": "Cattle",
+            "Oveja": "Sheep", "Cabra": "Goat", "Cerdo": "Pig", "Conejo": "Rabbit",
+            "Ave": "Bird", "Reptil": "Reptile",
+        }
+        mobile_species = st.selectbox(tr("Especie", "Species", language), list(species_choices_mobile),
+                                      format_func=lambda s: s if language == "Español" else species_choices_mobile[s],
+                                      key="mobile_species")
+        mobile_pet_name = st.text_input(tr("Nombre ficticio", "Fictional pet name", language), value="Max", max_chars=50,
+                                        key="mobile_pet_name")
+        mobile_breeds = {
+            "Perro": ["Criollo / Mestizo", "Golden Retriever", "Labrador Retriever", "Pastor Alemán", "Bulldog", "Otra / No sé"],
+            "Gato": ["Criollo / Mestizo", "Persa", "Siamés", "Maine Coon", "Ragdoll", "Otra / No sé"],
+            "Caballo": ["Criollo", "Paso Fino", "Árabe", "Frisón", "Otra / No sé"],
+            "Bovino": ["Criollo", "Holstein", "Brahman", "Hereford", "Angus", "Otra / No sé"],
+            "Ave": ["Mestiza", "Canario", "Periquito", "Papagayo", "Gallina", "Otra / No sé"],
+        }
+        mobile_breed = st.selectbox(tr("Raza", "Breed", language), mobile_breeds.get(mobile_species, ["Otra / No sé"]),
+                                    key="mobile_breed")
+        mobile_age, mobile_sex = st.columns(2)
+        with mobile_age:
+            mobile_pet_age = st.number_input(tr("Edad", "Age", language), 0.0, 100.0, 3.0, 0.5, key="mobile_age")
+        with mobile_sex:
+            mobile_sex_choice = st.selectbox(tr("Sexo", "Sex", language), ["Hembra", "Macho", "No sé"],
+                                             format_func=lambda s: s if language == "Español" else {"Hembra":"Female", "Macho":"Male", "No sé":"Unknown"}[s],
+                                             key="mobile_sex")
+
+    with st.expander(tr("📍 Ubicación", "📍 Location", language), expanded=False):
+        mobile_country = st.selectbox(tr("País", "Country", language), ["Estados Unidos", "Venezuela"], key="mobile_country")
+        mobile_states = {
+            "Estados Unidos": ["Florida", "California", "Texas", "New York", "New Jersey", "Illinois", "Pennsylvania", "Washington", "Georgia", "Arizona", "Otro estado"],
+            "Venezuela": ["Distrito Capital", "Miranda", "Zulia", "Carabobo", "Aragua", "Lara", "Anzoátegui", "Bolívar", "Táchira", "Falcón", "Otro estado"],
+        }
+        mobile_region = st.selectbox(tr("Estado / región", "State / region", language), mobile_states[mobile_country], key="mobile_region")
+        mobile_city = st.text_input(tr("Ciudad", "City", language), value="Miami" if mobile_country == "Estados Unidos" else "Caracas", key="mobile_city")
+
+    with st.expander(tr("🎙️ Voz de ALMA", "🎙️ ALMA voice", language), expanded=False):
+        mobile_speech_on = st.toggle(tr("Activar voz y micrófono", "Enable voice and microphone", language), value=True, key="mobile_speech_on")
+        mobile_voice_choice = st.selectbox(tr("Voz", "Voice", language), ["Marin", "Coral", "Shimmer"], disabled=not mobile_speech_on, key="mobile_voice_choice")
+        mobile_speed = st.slider(tr("Velocidad", "Speed", language), .80, 1.60, DEFAULT_SPEED, .05, disabled=not mobile_speech_on, key="mobile_speed")
+        mobile_auto_speak = st.toggle(tr("Reproducir automáticamente", "Auto-play answers", language), value=True, disabled=not mobile_speech_on, key="mobile_auto_speak")
+
+    with st.expander(tr("📚 Fuentes", "📚 Sources", language), expanded=False):
+        mobile_web_on = st.toggle(tr("Permitir búsqueda web", "Allow web search", language), value=True, key="mobile_web_on")
