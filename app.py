@@ -119,7 +119,7 @@ div[data-testid="stElementContainer"]:has(> [aria-label="alma_fixed_composer"]){
   [data-testid="stSidebar"] .block-container{padding:1rem 1.1rem 2rem!important;}
   [data-testid="stSidebar"] [data-testid="stExpander"]{margin:.25rem 0!important;}
   [data-testid="stChatInput"]{left:.65rem!important;right:.65rem!important;bottom:1.35rem!important;}
-  .prw-hero > .prw-face{display:none!important;}
+  .prw-hero > .prw-face{display:block!important;width:82px!important;height:82px!important;border-radius:18px!important;object-fit:cover!important;padding:0!important;}
   .prw-hero{min-height:100px!important;padding:16px!important;}
 }
 </style>
@@ -272,7 +272,7 @@ def ask(question: str, do_web: bool, previous: str | None):
 left, right = st.columns([2.42, 1.1], gap="large")
 with left:
     st.markdown(f"""<header class="prw-bar"><div class="prw-brand"><img class="prw-brand-logo" src="{uri('petsrwise_icon.png')}" alt="PetsRWise"><div><span class="prw-brand-name">PetsRWise <b>Alma</b></span><span class="prw-brand-lab">Veterinary AI LAB</span></div></div></header>""",unsafe_allow_html=True)
-    st.markdown(f"""<section class="prw-hero"><img class="prw-face" src="{uri('petsrwise_icon.png')}" alt="Logo oficial de PetsRWise">
+    st.markdown(f"""<section class="prw-hero"><img class="prw-face" src="{uri('portrait_mockup.png')}" alt="Foto ilustrativa de ALMA">
     <div><div class="prw-hero-title">{tr('Hola, soy','Hello, I’m',language)} <b>ALMA</b></div>
     <div class="prw-hero-sub">{tr('Tu asistente de IA para bienestar animal, información y orientación hacia atención veterinaria.','Your AI assistant for animal wellness information and finding veterinary services.',language)}</div>
     <span class="prw-hero-pill">✦ {tr('Avatar ilustrativo · No es médica veterinaria','Illustrative avatar · Not a veterinarian',language)}</span></div></section>""",unsafe_allow_html=True)
