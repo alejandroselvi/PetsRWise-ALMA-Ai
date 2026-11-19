@@ -129,6 +129,21 @@ for key, val in {"nav": "chat", "messages": [], "previous_response_id": None, "l
     if key not in st.session_state:
         st.session_state[key] = val
 
+# Safe defaults for hamburger controls.
+mobile_species = "Perro"
+mobile_pet_name = "Max"
+mobile_breed = "Criollo / Mestizo"
+mobile_pet_age = 3.0
+mobile_sex_choice = "Hembra"
+mobile_country = "Estados Unidos"
+mobile_region = "Florida"
+mobile_city = "Miami"
+mobile_speech_on = True
+mobile_voice_choice = "Marin"
+mobile_speed = DEFAULT_SPEED
+mobile_auto_speak = True
+mobile_web_on = True
+
 # Keep navigation simple and left-aligned. The right panel owns the pet profile and voice settings.
 with st.sidebar:
     st.image(str(LOGO), width=174)
@@ -151,6 +166,50 @@ with st.sidebar:
                   "🔒 Internal prototype. Use fictional animals and scenarios only.", language))
     st.caption("© PetsRWise · ALMA Web v0.7")
 
+    with st.expander(tr("🐾 Perfil de mascota", "🐾 Pet profile", language), expanded=False):
+        species_choices_mobile = {
+            "Perro":"Dog", "Gato":"Cat", "Caballo":"Horse", "Bovino":"Cattle",
+            "Oveja":"Sheep", "Cabra":"Goat", "Cerdo":"Pig", "Conejo":"Rabbit",
+            "Ave":"Bird", "Reptil":"Reptile",
+        }
+        mobile_species = st.selectbox(tr("Especie", "Species", language), list(species_choices_mobile),
+                                      format_func=lambda s: s if language == "Español" else species_choices_mobile[s],
+                                      key="mobile_species")
+        mobile_pet_name = st.text_input(tr("Nombre ficticio", "Fictional pet name", language), value="Max", max_chars=50, key="mobile_pet_name")
+        mobile_breeds = {
+            "Perro": ["Criollo / Mestizo", "Golden Retriever", "Labrador Retriever", "Pastor Alemán", "Bulldog", "Otra / No sé"],
+            "Gato": ["Criollo / Mestizo", "Persa", "Siamés", "Maine Coon", "Ragdoll", "Otra / No sé"],
+            "Caballo": ["Criollo", "Paso Fino", "Árabe", "Frisón", "Otra / No sé"],
+            "Bovino": ["Criollo", "Holstein", "Brahman", "Hereford", "Angus", "Otra / No sé"],
+            "Ave": ["Mestiza", "Canario", "Periquito", "Papagayo", "Gallina", "Otra / No sé"],
+        }
+        mobile_breed = st.selectbox(tr("Raza", "Breed", language), mobile_breeds.get(mobile_species, ["Otra / No sé"]), key="mobile_breed")
+        mobile_age, mobile_sex = st.columns(2)
+        with mobile_age:
+            mobile_pet_age = st.number_input(tr("Edad", "Age", language), 0.0, 100.0, 3.0, 0.5, key="mobile_age")
+        with mobile_sex:
+            mobile_sex_choice = st.selectbox(tr("Sexo", "Sex", language), ["Hembra", "Macho", "No sé"],
+                                             format_func=lambda s: s if language == "Español" else {"Hembra":"Female", "Macho":"Male", "No sé":"Unknown"}[s],
+                                             key="mobile_sex")
+
+    with st.expander(tr("📍 Ubicación", "📍 Location", language), expanded=False):
+        mobile_country = st.selectbox(tr("País", "Country", language), ["Estados Unidos", "Venezuela"], key="mobile_country")
+        mobile_states = {
+            "Estados Unidos": ["Florida", "California", "Texas", "New York", "New Jersey", "Illinois", "Pennsylvania", "Washington", "Georgia", "Arizona", "Otro estado"],
+            "Venezuela": ["Distrito Capital", "Miranda", "Zulia", "Carabobo", "Aragua", "Lara", "Anzoátegui", "Bolívar", "Táchira", "Falcón", "Otro estado"],
+        }
+        mobile_region = st.selectbox(tr("Estado / región", "State / region", language), mobile_states[mobile_country], key="mobile_region")
+        mobile_city = st.text_input(tr("Ciudad", "City", language), value="Miami" if mobile_country == "Estados Unidos" else "Caracas", key="mobile_city")
+
+    with st.expander(tr("🎙️ Voz de ALMA", "🎙️ ALMA voice", language), expanded=False):
+        mobile_speech_on = st.toggle(tr("Activar voz y micrófono", "Enable voice and microphone", language), value=True, key="mobile_speech_on")
+        mobile_voice_choice = st.selectbox(tr("Voz", "Voice", language), ["Marin", "Coral", "Shimmer"], disabled=not mobile_speech_on, key="mobile_voice_choice")
+        mobile_speed = st.slider(tr("Velocidad", "Speed", language), .80, 1.60, DEFAULT_SPEED, .05, disabled=not mobile_speech_on, key="mobile_speed")
+        mobile_auto_speak = st.toggle(tr("Reproducir automáticamente", "Auto-play answers", language), value=True, disabled=not mobile_speech_on, key="mobile_auto_speak")
+
+    with st.expander(tr("📚 Fuentes", "📚 Sources", language), expanded=False):
+        mobile_web_on = st.toggle(tr("Permitir búsqueda web", "Allow web search", language), value=True, key="mobile_web_on")
+
 species = mobile_species
 pet_name = mobile_pet_name
 breed = mobile_breed
@@ -164,6 +223,7 @@ voice_choice = mobile_voice_choice
 speed = mobile_speed
 auto_speak = mobile_auto_speak
 web_on = mobile_web_on
+vectors = vector_ids_from_env()
 
 profile_values = {
     "species": species.lower(),
@@ -372,50 +432,3 @@ with left:
                        "**Upcoming:** lip-synced avatar, verified hospital directory, and handoff to licensed professionals.",language))
     st.markdown("<div class='prw-footer'>© PetsRWise · ALMA Web v0.7 · "
                 "<a href='https://www.petsrwise.com/' target='_blank' rel='noopener noreferrer'>petsrwise.com</a></div>",unsafe_allow_html=True)
-
-with st.sidebar:
-    with st.expander(tr("🐾 Perfil de mascota", "🐾 Pet profile", language), expanded=False):
-        species_choices_mobile = {
-            "Perro": "Dog", "Gato": "Cat", "Caballo": "Horse", "Bovino": "Cattle",
-            "Oveja": "Sheep", "Cabra": "Goat", "Cerdo": "Pig", "Conejo": "Rabbit",
-            "Ave": "Bird", "Reptil": "Reptile",
-        }
-        mobile_species = st.selectbox(tr("Especie", "Species", language), list(species_choices_mobile),
-                                      format_func=lambda s: s if language == "Español" else species_choices_mobile[s],
-                                      key="mobile_species")
-        mobile_pet_name = st.text_input(tr("Nombre ficticio", "Fictional pet name", language), value="Max", max_chars=50,
-                                        key="mobile_pet_name")
-        mobile_breeds = {
-            "Perro": ["Criollo / Mestizo", "Golden Retriever", "Labrador Retriever", "Pastor Alemán", "Bulldog", "Otra / No sé"],
-            "Gato": ["Criollo / Mestizo", "Persa", "Siamés", "Maine Coon", "Ragdoll", "Otra / No sé"],
-            "Caballo": ["Criollo", "Paso Fino", "Árabe", "Frisón", "Otra / No sé"],
-            "Bovino": ["Criollo", "Holstein", "Brahman", "Hereford", "Angus", "Otra / No sé"],
-            "Ave": ["Mestiza", "Canario", "Periquito", "Papagayo", "Gallina", "Otra / No sé"],
-        }
-        mobile_breed = st.selectbox(tr("Raza", "Breed", language), mobile_breeds.get(mobile_species, ["Otra / No sé"]),
-                                    key="mobile_breed")
-        mobile_age, mobile_sex = st.columns(2)
-        with mobile_age:
-            mobile_pet_age = st.number_input(tr("Edad", "Age", language), 0.0, 100.0, 3.0, 0.5, key="mobile_age")
-        with mobile_sex:
-            mobile_sex_choice = st.selectbox(tr("Sexo", "Sex", language), ["Hembra", "Macho", "No sé"],
-                                             format_func=lambda s: s if language == "Español" else {"Hembra":"Female", "Macho":"Male", "No sé":"Unknown"}[s],
-                                             key="mobile_sex")
-
-    with st.expander(tr("📍 Ubicación", "📍 Location", language), expanded=False):
-        mobile_country = st.selectbox(tr("País", "Country", language), ["Estados Unidos", "Venezuela"], key="mobile_country")
-        mobile_states = {
-            "Estados Unidos": ["Florida", "California", "Texas", "New York", "New Jersey", "Illinois", "Pennsylvania", "Washington", "Georgia", "Arizona", "Otro estado"],
-            "Venezuela": ["Distrito Capital", "Miranda", "Zulia", "Carabobo", "Aragua", "Lara", "Anzoátegui", "Bolívar", "Táchira", "Falcón", "Otro estado"],
-        }
-        mobile_region = st.selectbox(tr("Estado / región", "State / region", language), mobile_states[mobile_country], key="mobile_region")
-        mobile_city = st.text_input(tr("Ciudad", "City", language), value="Miami" if mobile_country == "Estados Unidos" else "Caracas", key="mobile_city")
-
-    with st.expander(tr("🎙️ Voz de ALMA", "🎙️ ALMA voice", language), expanded=False):
-        mobile_speech_on = st.toggle(tr("Activar voz y micrófono", "Enable voice and microphone", language), value=True, key="mobile_speech_on")
-        mobile_voice_choice = st.selectbox(tr("Voz", "Voice", language), ["Marin", "Coral", "Shimmer"], disabled=not mobile_speech_on, key="mobile_voice_choice")
-        mobile_speed = st.slider(tr("Velocidad", "Speed", language), .80, 1.60, DEFAULT_SPEED, .05, disabled=not mobile_speech_on, key="mobile_speed")
-        mobile_auto_speak = st.toggle(tr("Reproducir automáticamente", "Auto-play answers", language), value=True, disabled=not mobile_speech_on, key="mobile_auto_speak")
-
-    with st.expander(tr("📚 Fuentes", "📚 Sources", language), expanded=False):
-        mobile_web_on = st.toggle(tr("Permitir búsqueda web", "Allow web search", language), value=True, key="mobile_web_on")
