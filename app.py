@@ -269,6 +269,7 @@ def ask(question: str, do_web: bool, previous: str | None):
     return ask_alma(OpenAI(timeout=60, max_retries=1), question, profile, vectors,
                     previous_response_id=previous, use_web_search=do_web, model=model)
 
+left, right = st.columns([2.42, 1.1], gap="large")
 with left:
     st.markdown(f"""<header class="prw-bar"><div class="prw-brand"><img class="prw-brand-logo" src="{uri('petsrwise_icon.png')}" alt="PetsRWise"><div><span class="prw-brand-name">PetsRWise <b>Alma</b></span><span class="prw-brand-lab">Veterinary AI LAB</span></div></div></header>""",unsafe_allow_html=True)
     st.markdown(f"""<section class="prw-hero"><img class="prw-face" src="{uri('petsrwise_icon.png')}" alt="Logo oficial de PetsRWise">
