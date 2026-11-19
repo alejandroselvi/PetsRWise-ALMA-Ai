@@ -206,10 +206,12 @@ with right:
                   "Manually entered location; GPS isn't enabled.", language))
     st.divider()
     st.markdown(f"<div class='prw-section'>🎙️ {tr('Voz de ALMA','ALMA voice',language)}</div>", unsafe_allow_html=True)
-    speech_on = st.toggle(tr("Activar voz y micrófono", "Enable voice and microphone", language), value=True)
+    speech_on = st.toggle(tr("Activar voz y micrófono", "Enable voice and microphone", language), value=st.session_state.get("alma_voice_enabled", True), key="alma_voice_toggle")
+    st.session_state.alma_voice_enabled = speech_on
     voice_choice = st.selectbox(tr("Timbre", "Voice", language), ["Marin", "Coral", "Shimmer"], disabled=not speech_on)
     speed = st.slider(tr("Velocidad", "Speech speed", language), .80, 1.60, DEFAULT_SPEED, .05, disabled=not speech_on)
-    auto_speak = st.toggle(tr("Reproducir automáticamente", "Auto-play answers", language), value=True, disabled=not speech_on)
+    auto_speak = st.toggle(tr("Reproducir automáticamente", "Auto-play answers", language), value=st.session_state.get("alma_autoplay_enabled", True), disabled=not speech_on, key="alma_autoplay_toggle")
+    st.session_state.alma_autoplay_enabled = auto_speak
     if speech_on and st.button(tr("▶ Probar voz", "▶ Preview voice", language), use_container_width=True):
         test_text = tr("Hola, soy ALMA, la asistente de inteligencia artificial de PetsRWise.",
                        "Hello, I'm ALMA, the PetsRWise AI assistant.", language)
