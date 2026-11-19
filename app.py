@@ -383,7 +383,7 @@ with left:
                             try:
                                 speech = synthesize_reply(OpenAI(timeout=60, max_retries=1), result.text, language, voice_choice.lower(), speed)
                                 entry["audio"], entry["audio_sig"] = speech, (language,voice_choice,speed)
-                                st.audio(speech, format="audio/mp3", autoplay=True, key=f"alma_autoplay_{len(st.session_state.messages)}")
+                                st.audio(speech, format="audio/mp3", autoplay=True)
                             except Exception as ex:
                                 st.caption(tr("Respuesta de texto lista; audio no disponible.", "Text reply is ready; audio unavailable.",language))
                                 st.caption(f"{type(ex).__name__}: {str(ex)[:500]}")
