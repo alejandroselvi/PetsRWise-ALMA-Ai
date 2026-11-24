@@ -221,7 +221,7 @@ div[data-testid="stElementContainer"]:has(> [aria-label="alma_fixed_composer"]){
   [data-testid="stSidebar"][aria-expanded="true"] ~ [data-testid="stMain"]{margin-left:0!important;}
   [data-testid="stSidebar"] .block-container{padding:1rem 1.1rem 2rem!important;}
   [data-testid="stSidebar"] [data-testid="stExpander"]{margin:.25rem 0!important;}
-  [data-testid="stChatInput"]{left:.65rem!important;right:.65rem!important;bottom:calc(.75rem + env(safe-area-inset-bottom))!important;z-index:999!important;}
+  [data-testid="stChatInput"]{left:.65rem!important;right:.65rem!important;bottom:calc(1.75rem + env(safe-area-inset-bottom))!important;z-index:999!important;}
   .prw-hero > .prw-face{display:block!important;width:82px!important;height:82px!important;border-radius:18px!important;object-fit:cover!important;padding:0!important;}
   .prw-hero{min-height:100px!important;padding:16px!important;}
 }
