@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
 
-from alma_backend import AlmaProfile, ask_alma, possible_emergency, vector_ids_from_env
+from alma_backend import AlmaProfile, ask_alma, possible_emergency, emergency_message, vector_ids_from_env
 from alma_voice import DEFAULT_SPEED, synthesize_reply, transcribe_recording
 
 ROOT = Path(__file__).resolve().parent
@@ -206,10 +206,22 @@ div[data-testid="stElementContainer"]:has(> [aria-label="alma_fixed_composer"]){
   [data-testid="stForm"]{padding:16px!important;}
   [data-testid="stForm"] [data-testid="stHorizontalBlock"]{flex-direction:column!important;gap:1rem!important;}
   [data-testid="stForm"] [data-testid="stColumn"]{width:100%!important;min-width:0!important;flex:1 1 auto!important;}
-  [data-testid="stSidebar"]{width:min(88vw,350px)!important;max-width:min(88vw,350px)!important;}
+  [data-testid="stSidebar"][aria-expanded="true"]{width:min(88vw,350px)!important;max-width:min(88vw,350px)!important;z-index:1002!important;box-shadow:8px 0 32px #26233226;}
+  [data-testid="stSidebar"][aria-expanded="false"]{width:0!important;min-width:0!important;max-width:0!important;visibility:hidden;}
+  [data-testid="stExpandSidebarButton"]{min-width:44px!important;min-height:44px!important;border-radius:12px!important;background:#FFF0F7!important;color:#A91E60!important;}
+  [data-testid="stExpandSidebarButton"] svg,[data-testid="stExpandSidebarButton"] span{display:none!important;}
+  [data-testid="stExpandSidebarButton"]::before{content:"☰";font-size:26px;line-height:1;}
+  [data-testid="stSidebarCollapseButton"], [data-testid="stSidebarCollapseButton"] button{min-width:44px!important;min-height:44px!important;}
+  [data-testid="stMainBlockContainer"]{padding-left:1rem!important;padding-right:1rem!important;padding-bottom:8rem!important;}
+  .prw-brand-name{font-size:1.15rem;}
+  .prw-brand-logo{width:48px;height:48px;max-width:48px;max-height:48px;}
+  .prw-hero-title{font-size:1.8rem;}
+  .prw-hero-sub{font-size:.95rem;}
+  .st-key-alma_main_content{width:100%;min-width:0;}
+  [data-testid="stSidebar"][aria-expanded="true"] ~ [data-testid="stMain"]{margin-left:0!important;}
   [data-testid="stSidebar"] .block-container{padding:1rem 1.1rem 2rem!important;}
   [data-testid="stSidebar"] [data-testid="stExpander"]{margin:.25rem 0!important;}
-  [data-testid="stChatInput"]{left:.65rem!important;right:.65rem!important;bottom:1.35rem!important;}
+  [data-testid="stChatInput"]{left:.65rem!important;right:.65rem!important;bottom:calc(.75rem + env(safe-area-inset-bottom))!important;z-index:999!important;}
   .prw-hero > .prw-face{display:block!important;width:82px!important;height:82px!important;border-radius:18px!important;object-fit:cover!important;padding:0!important;}
   .prw-hero{min-height:100px!important;padding:16px!important;}
 }
@@ -354,8 +366,7 @@ def ask(question: str, do_web: bool, previous: str | None):
     return ask_alma(OpenAI(timeout=60, max_retries=1), question, profile, vectors,
                     previous_response_id=previous, use_web_search=do_web, model=model)
 
-left, right = st.columns([2.42, 1.1], gap="large")
-with left:
+with st.container(key="alma_main_content"):
     st.markdown(f"""<header class="prw-bar"><div class="prw-brand"><img class="prw-brand-logo" src="{uri('petsrwise_icon.png')}" alt="PetsRWise"><div><span class="prw-brand-name"><span class="prw-wordmark">PetsRWise</span> <b>Alma</b></span><span class="prw-brand-lab">Veterinary AI LAB</span></div></div></header>""",unsafe_allow_html=True)
     if st.session_state.nav == "locator":
         st.markdown(f"""<section class="prw-locator-intro">
@@ -370,27 +381,36 @@ with left:
         <span class="prw-hero-pill">✦ {tr('Avatar ilustrativo · No es médica veterinaria','Illustrative avatar · Not a veterinarian',language)}</span></div></section>""",unsafe_allow_html=True)
     if st.session_state.nav == "chat":
         if not st.session_state.messages:
-            st.markdown(f"<div class='prw-section'>👋 {tr('¿Qué te gustaría hacer hoy?','How can I help today?',language)}</div>",unsafe_allow_html=True)
-            st.markdown(f"<div class='prw-muted'>{tr('Elige una opción o escribe una pregunta sobre un caso ficticio.','Choose an option or ask about a fictional case.',language)}</div>",unsafe_allow_html=True)
+            welcome = tr(
+                f"Hola, soy ALMA. Estoy aquí para ayudarte con {pet_name} paso a paso.",
+                f"Hi, I’m ALMA. I’m here to help you with {pet_name}, step by step.", language)
+            st.markdown(f"<p class='prw-hero-sub'>{esc(welcome)}</p>", unsafe_allow_html=True)
+            st.markdown(tr(
+                "Puedo ayudarte a:\n\n- entender qué podría estar pasando\n- ver si puede ser urgente\n- buscar una clínica\n\n**¿Qué notaste primero?**",
+                "I can help you:\n\n- understand what might be happening\n- recognize possible urgency\n- find a clinic\n\n**What did you notice first?**", language))
             actions = [
-                ("dog_mockup.png", "🩺 " + tr("Síntomas", "Symptoms",language),
-                 tr("¿Qué preguntas debo preparar sobre los síntomas de mi perro ficticio?", "What questions should I prepare about my fictional dog's symptoms?",language)),
-                ("cat_mockup.png", "♡ " + tr("Cuidados", "Care",language),
-                 tr("¿Qué cuidados preventivos generales son apropiados para esta especie?", "What general preventive care applies to this species?",language)),
-                ("hospital_mockup.png", "📍 " + tr("Buscar veterinario", "Find a veterinarian",language), "__locator__"),
-                ("pets_mockup.png", "🐾 " + tr("Mis mascotas", "My pets",language), "__profile__"),
+                ("dog_mockup.png", tr("Tiene síntomas", "Has symptoms", language),
+                 tr("Mi mascota tiene síntomas. Ayúdame a ordenarlos, una pregunta a la vez.", "My pet has symptoms. Help me organize them, one question at a time.", language)),
+                ("pets_mockup.png", tr("Quiero saber si es urgente", "Could it be urgent?", language), "__emergency_info__"),
+                ("hospital_mockup.png", tr("Buscar clínica", "Find a clinic", language), "__locator__"),
+                ("cat_mockup.png", tr("Solo necesito orientación", "I just need guidance", language),
+                 tr("Solo necesito orientación general para mi mascota. Pregúntame sobre qué tema.", "I just need general guidance for my pet. Ask which topic.", language)),
             ]
-            cols = st.columns(4, gap="small")
+            cols = st.columns(2, gap="small")
             suggestion = None
             for idx, (pic, title, question) in enumerate(actions):
-                with cols[idx]:
+                with cols[idx % 2]:
                     st.markdown(f"<img class='prw-card-image' src='{uri(pic)}' alt='{esc(title)}'>",unsafe_allow_html=True)
                     if question == "__locator__":
                         # Streamlit callbacks execute before keyed widgets are instantiated.
                         st.button(title, key=f"action_{idx}", use_container_width=True,
                                   on_click=lambda: st.session_state.update(nav="locator"))
                     elif st.button(title, key=f"action_{idx}", use_container_width=True):
-                        if question == "__profile__":
+                        if question == "__emergency_info__":
+                            st.warning(tr(
+                                "Si notas dificultad para respirar, colapso, convulsiones, imposibilidad de orinar, un traumatismo grave o posible ingestión tóxica, busca atención veterinaria de emergencia ahora. No esperes a responder preguntas aquí.",
+                                "For breathing difficulty, collapse, seizures, inability to urinate, major trauma or possible toxic ingestion, seek emergency veterinary care now. Do not wait to answer questions here.", language))
+                        elif question == "__profile__":
                             st.info(tr("El perfil de prueba está a la derecha. La gestión real de mascotas llegará más adelante.",
                                        "Your test profile is on the right. Actual pet-account management is not connected.",language))
                         else:
@@ -424,9 +444,9 @@ with left:
             submit_mode="submit",
         )
 
-        question = None
+        question = suggestion
         if chat_value is not None:
-            question_text = getattr(chat_value, "text", None)
+            question_text = chat_value if isinstance(chat_value, str) else getattr(chat_value, "text", None)
             question_audio = getattr(chat_value, "audio", None)
             if question_audio is not None:
                 try:
@@ -446,8 +466,7 @@ with left:
                 st.markdown(question)
             with st.chat_message("assistant", avatar=str(ICON)):
                 if possible_emergency(question):
-                    msg = tr("⚠️ Si este caso fuera real, busca atención veterinaria de emergencia inmediatamente. Esta demo no puede evaluar pacientes.",
-                             "⚠️ If this were a real case, seek emergency veterinary care immediately. This demo cannot assess patients.",language)
+                    msg = emergency_message(language)
                     st.error(msg)
                     st.session_state.messages.append({"role":"assistant", "content":msg, "emergency":True, "sources":[]})
                 elif not os.getenv("OPENAI_API_KEY"):

@@ -57,6 +57,25 @@ class AlmaBackendTests(unittest.TestCase):
         self.assertEqual(kwargs['tools'][0]['vector_store_ids'], ['vs_one'])
         self.assertEqual(out.text, 'Demo')
 
+    def test_emergency_referral_skips_api_and_tools(self):
+        prompts = ["Tiene dificultad para respirar", "Se desplomó", "Tiene convulsiones",
+                   "No puede orinar", "Fue atropellado", "Comió veneno",
+                   "Possible toxic ingestion", "She is unconscious", "He was hit by a car"]
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                client = Mock()
+                reply = ask_alma(client, prompt, AlmaProfile(), ['vs_one'])
+                client.responses.create.assert_not_called()
+                self.assertIn('ahora mismo', reply.text)
+                self.assertIsNotNone(reply.warning)
+                self.assertIsNone(reply.response_id)
+
+    def test_emergency_normalization_and_english(self):
+        client = Mock()
+        reply = ask_alma(client, 'COMIO   VENENO', AlmaProfile(language='English'), [])
+        self.assertIn('Seek emergency veterinary care now', reply.text)
+        client.responses.create.assert_not_called()
+
     def test_voice_locale_configuration(self):
         self.assertEqual(DEFAULT_SPEED, 1.2)
         self.assertIn('latinoamericano', speech_instructions('Español'))
