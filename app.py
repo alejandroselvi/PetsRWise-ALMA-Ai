@@ -11,8 +11,10 @@ import html
 import os
 from pathlib import Path
 import inspect
+import json
 
 import streamlit as st
+import streamlit.components.v1 as components
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
@@ -34,12 +36,83 @@ ASSETS = ROOT / "assets"
 LOGO = ASSETS / "petsrwise_logo_original.png"
 ICON = ASSETS / "petsrwise_icon.png"
 AVATAR = ASSETS / "portrait_mockup.png"
+SPECIES_CHOICES = {
+    "Perro": "Dog", "Gato": "Cat", "Caballo": "Horse", "Bovino": "Cattle",
+    "Oveja": "Sheep", "Cabra": "Goat", "Cerdo": "Pig", "Conejo": "Rabbit",
+    "Ave": "Bird", "Reptil": "Reptile",
+}
 
 
 def uri(filename: str) -> str:
     path = ASSETS / filename
     mime = "image/jpeg" if path.suffix.lower() in {".jpg", ".jpeg"} else "image/png"
     return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode('ascii')}"
+
+
+
+def follow_chat_response(enabled: bool) -> None:
+    """Follow new response content; let readers scroll up without being pulled back."""
+    components.html(
+        """<script>
+        (() => {
+            const doc = window.parent.document;
+            const host = window.parent;
+            if (host.__almaChatFollowCleanup) host.__almaChatFollowCleanup();
+            let following = FOLLOW_ENABLED;
+            let frame = 0;
+            let disposed = false;
+            const reducedMotion = host.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const messages = () => doc.querySelectorAll('[data-testid="stChatMessage"]');
+            function follow() {
+                frame = 0;
+                if (!following || disposed) return;
+                const list = messages();
+                const latest = list[list.length - 1];
+                if (latest) latest.scrollIntoView({block: 'end', behavior: reducedMotion ? 'instant' : 'smooth'});
+            }
+            function schedule() {
+                if (following && !frame) frame = host.requestAnimationFrame(follow);
+            }
+            const observed = new WeakSet();
+            const resize = new host.ResizeObserver(schedule);
+            function watchMessages() {
+                messages().forEach(message => {
+                    message.style.scrollMarginBottom = '140px';
+                    if (!observed.has(message)) { resize.observe(message); observed.add(message); }
+                });
+            }
+            const root = doc.querySelector('[data-testid="stMain"]') || doc.querySelector('[data-testid="stAppViewContainer"]');
+            if (!root) return;
+            const mutations = new host.MutationObserver(() => { watchMessages(); schedule(); });
+            mutations.observe(root, {childList: true, subtree: true, characterData: true});
+            const wheel = event => { if (event.deltaY < 0) following = false; };
+            const keyboard = event => {
+                if (event.target.closest('input, textarea, [contenteditable="true"]')) return;
+                if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) following = false;
+            };
+            let touchY = null;
+            const touchStart = event => { touchY = event.touches[0]?.clientY ?? null; };
+            const touchMove = event => {
+                if (touchY !== null && event.touches[0]?.clientY > touchY + 5) following = false;
+            };
+            doc.addEventListener('wheel', wheel, {passive: true});
+            doc.addEventListener('keydown', keyboard);
+            doc.addEventListener('touchstart', touchStart, {passive: true});
+            doc.addEventListener('touchmove', touchMove, {passive: true});
+            const cleanup = () => {
+                disposed = true;
+                mutations.disconnect(); resize.disconnect(); host.cancelAnimationFrame(frame);
+                doc.removeEventListener('wheel', wheel); doc.removeEventListener('keydown', keyboard);
+                doc.removeEventListener('touchstart', touchStart); doc.removeEventListener('touchmove', touchMove);
+                if (host.__almaChatFollowCleanup === cleanup) delete host.__almaChatFollowCleanup;
+            };
+            host.__almaChatFollowCleanup = cleanup;
+            window.addEventListener('pagehide', cleanup, {once: true});
+            watchMessages(); schedule();
+        })();
+        </script>""".replace("FOLLOW_ENABLED", "true" if enabled else "false"),
+        height=0,
+    )
 
 
 def esc(s: str) -> str:
@@ -56,6 +129,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
     menu_items={"About": "ALMA / PetsRWise — prototipo interno con casos ficticios."},
+)
+
+wordmark_font = base64.b64encode((ASSETS / "HeyComic.otf").read_bytes()).decode("ascii")
+st.markdown(
+    "<style>@font-face{font-family:PetsRWiseHeyComics;src:url(data:font/otf;base64,"
+    + wordmark_font
+    + ") format('opentype');font-weight:400;font-style:normal;font-display:swap;}"
+    + ".prw-wordmark{font-size:1.12em;color:#EF4A9B!important;font-family:PetsRWiseHeyComics,sans-serif!important;font-weight:400!important;letter-spacing:0;line-height:1.15;}</style>",
+    unsafe_allow_html=True,
 )
 
 st.markdown("""
@@ -82,9 +164,14 @@ st.markdown("""
 [data-testid="stTextInput"] input,[data-testid="stSelectbox"]>div{border-radius:12px;}
 .prw-bar{display:flex;justify-content:flex-start;align-items:center;gap:11px;padding:4px 0 14px;margin-bottom:8px;border-bottom:1px solid #F2EEF3;height:64px;overflow:hidden;}
 .prw-brand{display:flex;align-items:center;gap:10px;height:52px;}
-.prw-brand-logo{width:48px;height:48px;max-width:48px;max-height:48px;object-fit:contain;border-radius:11px;}
+.prw-sidebar-brand{display:flex;align-items:center;gap:12px;margin:0 0 20px;}
+.prw-sidebar-brand img{width:60px;height:60px;object-fit:contain;flex-shrink:0;}
+.prw-sidebar-brand-name{font-size:21px;font-weight:750;line-height:1.2;color:#262332;}
+.prw-sidebar-brand-name b{color:#2563EB;font-family:PetsRWiseHeyComics,sans-serif!important;font-weight:400!important;letter-spacing:0;}
+.prw-sidebar-brand-lab{font-size:13px;font-weight:600;letter-spacing:.04em;color:#62596B;margin-top:5px;}
+.prw-brand-logo{width:56px;height:56px;max-width:56px;max-height:56px;object-fit:contain;border-radius:11px;}
 .prw-brand-name{font-size:1.32rem;font-weight:900;color:#24283B;letter-spacing:-.04em;line-height:1;white-space:nowrap;}
-.prw-brand-name b{color:#EF2990;}
+.prw-brand-name b{color:#2563EB;font-family:PetsRWiseHeyComics,sans-serif!important;font-weight:400!important;letter-spacing:0;}
 .prw-brand-lab{display:block;font-size:.62rem;color:#7E6676;font-weight:850;letter-spacing:.12em;text-transform:uppercase;margin-top:5px;}
 .prw-hero{background:linear-gradient(110deg,#FCE7F1,#FFF9FC 62%,#FFF0F7);border-radius:25px;padding:23px 26px;display:flex;gap:24px;align-items:center;border:1px solid #F7E1ED;margin-bottom:17px;min-height:215px;}
 .prw-face{width:150px!important;height:150px!important;border-radius:28px!important;object-fit:contain!important;background:#FFF;padding:10px;box-shadow:0 10px 22px #D24A8918!important;}
@@ -92,29 +179,33 @@ st.markdown("""
 .prw-hero-title b{color:#F32588;}
 .prw-hero-sub{font-size:1.01rem;color:#3F4354;line-height:1.45;}
 .prw-hero-pill{display:inline-block;color:#C82779;background:#FFF0F7;border:1px solid #F8CAE0;border-radius:30px;padding:7px 13px;font-size:.76rem;font-weight:700;margin-top:12px;}
+.st-key-vet_search,[data-testid="stForm"]{position:relative;height:auto;max-height:none;overflow:visible;background:#FFFFFF;border:1px solid #F2C7DC!important;border-radius:20px!important;padding:24px!important;}
+[data-testid="stForm"] [data-testid="stWidgetLabel"] p{font-size:1rem!important;font-weight:700!important;color:#262332!important;}
+[data-testid="stFormSubmitButton"] button{min-height:48px!important;width:100%!important;background:#EF2990!important;color:white!important;border-radius:12px!important;}
+.prw-locator-intro{padding:24px;margin:12px 0 22px;background:#FFF0F7;border:1px solid #F2C7DC;border-radius:20px;}
+.prw-locator-label{color:#A91E60;font-size:.8rem;font-weight:800;letter-spacing:.08em;}
+.prw-locator-intro h1{font-size:clamp(1.7rem,3vw,2.3rem);line-height:1.15;color:#192036;margin:10px 0 14px;}
+.prw-locator-intro p{font-size:1rem;color:#3F4354;line-height:1.6;}
+.prw-locator-steps{font-size:.9rem;font-weight:700;line-height:1.7;color:#263D80;margin-top:16px;}
 .prw-section{font-size:1.14rem;font-weight:800;letter-spacing:-.03em;margin:15px 0 8px;color:#24283B;}
 .prw-muted{color:#788092;font-size:.84rem;line-height:1.5;}
 .prw-alert{background:#FFF9FC;border:1px solid #F9DDEB;border-radius:17px;padding:16px 17px;color:#654859;font-size:.81rem;line-height:1.58;margin-top:8px;}
 .prw-alert strong{color:#E02079;}
-[data-testid="stForm"]{position:fixed!important;z-index:1000!important;left:calc(19rem + 2.1rem)!important;right:2.1rem!important;bottom:14px!important;width:auto!important;height:72px!important;max-height:72px!important;overflow:hidden!important;background:linear-gradient(100deg,rgba(255,240,247,.98),rgba(255,250,253,.98))!important;border:1px solid #F1C8DE!important;border-radius:22px!important;padding:6px 8px!important;box-shadow:0 8px 28px #A73A701F!important;backdrop-filter:none!important;}
-[data-testid="stForm"] [data-testid="stHorizontalBlock"]{height:58px!important;max-height:58px!important;align-items:center!important;overflow:hidden!important;}
-[data-testid="stForm"] [data-testid="stColumn"]{height:58px!important;max-height:58px!important;overflow:hidden!important;}
 [data-testid="stForm"] [data-testid="stTextInput"] input{height:54px!important;border:1px solid #F2CFE1!important;border-radius:18px!important;background:#FFFFFF!important;box-shadow:none!important;font-size:.96rem!important;padding-left:14px!important;}
-[data-testid="stForm"] [data-testid="stFormSubmitButton"] button{height:54px!important;width:54px!important;min-height:54px!important;border-radius:18px!important;background:#EF2990!important;border:0!important;color:white!important;font-size:1.15rem!important;padding:0!important;}
 [data-testid="stAudioInput"]{width:60px!important;height:60px!important;max-height:60px!important;border-radius:50%!important;background:linear-gradient(135deg,#FFF0F7,#FFE2F0)!important;border:2px solid #EF2990!important;box-shadow:0 5px 14px #EF299033!important;overflow:hidden!important;}
 [data-testid="stAudioInput"] button{width:60px!important;min-width:60px!important;height:60px!important;min-height:60px!important;border-radius:50%!important;border:0!important;background:transparent!important;font-size:1.65rem!important;padding:0!important;color:#C91A70!important;}
 [data-testid="stAudioInput"] svg{width:24px!important;height:24px!important;}
 [data-testid="stAudioInput"] > div:not(:first-child){display:none!important;}
 .main .block-container{padding-bottom:7.5rem!important;}
-@media(max-width:1000px){[data-testid="stForm"]{left:1rem!important;right:1rem!important;height:72px!important;}}
 
 div[data-testid="stVerticalBlock"][aria-label="alma_fixed_composer"],
 div[data-testid="stElementContainer"]:has(> [aria-label="alma_fixed_composer"]){position:fixed!important;z-index:1000!important;left:calc(19rem + 2.1rem)!important;right:2.1rem!important;bottom:14px!important;}
 [data-key="alma_fixed_composer"]{position:fixed!important;z-index:1000!important;left:calc(19rem + 2.1rem)!important;right:2.1rem!important;bottom:14px!important;height:72px!important;max-height:72px!important;overflow:hidden!important;background:linear-gradient(100deg,rgba(255,240,247,.98),rgba(255,250,253,.98))!important;border:1px solid #F1C8DE!important;border-radius:22px!important;padding:6px 8px!important;box-shadow:0 8px 28px #A73A701F!important;}
 
 @media(max-width:768px){
-  [data-testid="stMainBlockContainer"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2){display:none!important;}
-  [data-testid="stMainBlockContainer"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1){width:100%!important;max-width:100%!important;flex:1 1 100%!important;}
+  [data-testid="stForm"]{padding:16px!important;}
+  [data-testid="stForm"] [data-testid="stHorizontalBlock"]{flex-direction:column!important;gap:1rem!important;}
+  [data-testid="stForm"] [data-testid="stColumn"]{width:100%!important;min-width:0!important;flex:1 1 auto!important;}
   [data-testid="stSidebar"]{width:min(88vw,350px)!important;max-width:min(88vw,350px)!important;}
   [data-testid="stSidebar"] .block-container{padding:1rem 1.1rem 2rem!important;}
   [data-testid="stSidebar"] [data-testid="stExpander"]{margin:.25rem 0!important;}
@@ -146,8 +237,7 @@ mobile_web_on = True
 
 # Keep navigation simple and left-aligned. The right panel owns the pet profile and voice settings.
 with st.sidebar:
-    st.image(str(LOGO), width=174)
-    st.caption("ALMA · PetsRWise")
+    st.markdown(f"""<div class="prw-sidebar-brand"><a href="https://www.petsrwise.com/" target="_blank" rel="noopener noreferrer" aria-label="PetsRWise website"><img src="{uri('petsrwise_website_logo.png')}" alt="PetsRWise"></a><div><div class="prw-sidebar-brand-name"><span class="prw-wordmark">PetsRWise</span> <b>Alma</b></div><div class="prw-sidebar-brand-lab">Veterinary Lab</div></div></div>""", unsafe_allow_html=True)
     language = st.selectbox("Idioma / Language", ["Español", "English"], key="alma_language")
     routes = {
         "chat": tr("💬 Hablar con ALMA", "💬 Chat with ALMA", language),
@@ -167,13 +257,8 @@ with st.sidebar:
     st.caption("© PetsRWise · ALMA Web v0.7")
 
     with st.expander(tr("🐾 Perfil de mascota", "🐾 Pet profile", language), expanded=False):
-        species_choices_mobile = {
-            "Perro":"Dog", "Gato":"Cat", "Caballo":"Horse", "Bovino":"Cattle",
-            "Oveja":"Sheep", "Cabra":"Goat", "Cerdo":"Pig", "Conejo":"Rabbit",
-            "Ave":"Bird", "Reptil":"Reptile",
-        }
-        mobile_species = st.selectbox(tr("Especie", "Species", language), list(species_choices_mobile),
-                                      format_func=lambda s: s if language == "Español" else species_choices_mobile[s],
+        mobile_species = st.selectbox(tr("Especie", "Species", language), list(SPECIES_CHOICES),
+                                      format_func=lambda s: s if language == "Español" else SPECIES_CHOICES[s],
                                       key="mobile_species")
         mobile_pet_name = st.text_input(tr("Nombre ficticio", "Fictional pet name", language), value="Max", max_chars=50, key="mobile_pet_name")
         mobile_breeds = {
@@ -271,11 +356,18 @@ def ask(question: str, do_web: bool, previous: str | None):
 
 left, right = st.columns([2.42, 1.1], gap="large")
 with left:
-    st.markdown(f"""<header class="prw-bar"><div class="prw-brand"><img class="prw-brand-logo" src="{uri('petsrwise_icon.png')}" alt="PetsRWise"><div><span class="prw-brand-name">PetsRWise <b>Alma</b></span><span class="prw-brand-lab">Veterinary AI LAB</span></div></div></header>""",unsafe_allow_html=True)
-    st.markdown(f"""<section class="prw-hero"><img class="prw-face" src="{uri('portrait_mockup.png')}" alt="Foto ilustrativa de ALMA">
-    <div><div class="prw-hero-title">{tr('Hola, soy','Hello, I’m',language)} <b>ALMA</b></div>
-    <div class="prw-hero-sub">{tr('Tu asistente de IA para bienestar animal, información y orientación hacia atención veterinaria.','Your AI assistant for animal wellness information and finding veterinary services.',language)}</div>
-    <span class="prw-hero-pill">✦ {tr('Avatar ilustrativo · No es médica veterinaria','Illustrative avatar · Not a veterinarian',language)}</span></div></section>""",unsafe_allow_html=True)
+    st.markdown(f"""<header class="prw-bar"><div class="prw-brand"><img class="prw-brand-logo" src="{uri('petsrwise_icon.png')}" alt="PetsRWise"><div><span class="prw-brand-name"><span class="prw-wordmark">PetsRWise</span> <b>Alma</b></span><span class="prw-brand-lab">Veterinary AI LAB</span></div></div></header>""",unsafe_allow_html=True)
+    if st.session_state.nav == "locator":
+        st.markdown(f"""<section class="prw-locator-intro">
+        <div class="prw-locator-label">{tr('BUSCADOR VETERINARIO', 'VETERINARY SEARCH', language)}</div>
+        <h1>{tr('Encuentra opciones veterinarias en tu ciudad', 'Find veterinary options in your city', language)}</h1>
+        <p>{tr('Alma te ayuda a localizar clínicas y hospitales según la especie y el tipo de atención que buscas. Completa el formulario y pulsa Buscar veterinarios.', 'Alma helps you find clinics and hospitals for your animal’s species and care needs. Complete the form and select Find veterinarians.', language)}</p>
+        </section>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<section class="prw-hero"><img class="prw-face" src="{uri('portrait_mockup.png')}" alt="Foto ilustrativa de ALMA">
+        <div><div class="prw-hero-title">{tr('Hola, soy','Hello, I’m',language)} <b>ALMA</b></div>
+        <div class="prw-hero-sub">{tr('Tu asistente de IA para bienestar animal, información y orientación hacia atención veterinaria.','Your AI assistant for animal wellness information and finding veterinary services.',language)}</div>
+        <span class="prw-hero-pill">✦ {tr('Avatar ilustrativo · No es médica veterinaria','Illustrative avatar · Not a veterinarian',language)}</span></div></section>""",unsafe_allow_html=True)
     if st.session_state.nav == "chat":
         if not st.session_state.messages:
             st.markdown(f"<div class='prw-section'>👋 {tr('¿Qué te gustaría hacer hoy?','How can I help today?',language)}</div>",unsafe_allow_html=True)
@@ -346,6 +438,8 @@ with left:
             elif isinstance(question_text, str) and question_text.strip():
                 question = question_text.strip()
 
+        follow_chat_response(enabled=bool(question))
+
         if question:
             st.session_state.messages.append({"role": "user", "content": question})
             with st.chat_message("user", avatar="👤"):
@@ -382,41 +476,80 @@ with left:
                         st.caption(type(ex).__name__)
                         st.session_state.messages.pop()
     elif st.session_state.nav == "locator":
-        st.markdown(f"<div class='prw-section'>📍 {tr('Encuentra un veterinario','Find a veterinarian',language)}</div>",unsafe_allow_html=True)
-        st.markdown(f"<p class='prw-muted'>{tr('ALMA busca resultados públicos por ciudad y especie. No confirma horarios ni disponibilidad.', 'ALMA searches public listings by city and species. Hours and availability are not confirmed.',language)}</p>",unsafe_allow_html=True)
-        with st.form("vet_search"):
-            c1,c2 = st.columns(2)
+        with st.container(border=True, key="vet_search"):
+            st.caption(tr("Completa los datos y pulsa Buscar veterinarios.", "Enter your details and select Find veterinarians.", language))
+            search_country = st.selectbox(tr("País", "Country", language),
+                                          ["Estados Unidos", "Venezuela"],
+                                          index=0 if country == "Estados Unidos" else 1,
+                                          format_func=lambda value: "United States" if language == "English" and value == "Estados Unidos" else value,
+                                          key="vet_country")
+            locations = json.loads((ASSETS / "vet_locations.json").read_text())
+            state_options = list(locations[search_country]) + ["__other__"]
+            state_key = f"vet_state_{search_country}"
+            selected_state = st.selectbox(tr("Estado / región", "State / region", language), state_options,
+                index=state_options.index(region) if region in state_options else 0,
+                format_func=lambda value: tr("Otro estado / región", "Other state / region", language) if value == "__other__" else value,
+                key=state_key)
+            search_state = selected_state
+            if selected_state == "__other__":
+                search_state = st.text_input(tr("Escribe el estado / región", "Enter state / region", language), key=f"vet_custom_state_{search_country}")
+            city_options = locations[search_country].get(selected_state, []) + ["__other__"]
+            selected_city = st.selectbox(tr("Ciudad *", "City *", language), city_options,
+                index=city_options.index(city) if city in city_options else 0,
+                format_func=lambda value: tr("Otra ciudad", "Other city", language) if value == "__other__" else value,
+                key=f"vet_city_{search_country}_{selected_state}")
+            search_city = selected_city
+            if selected_city == "__other__":
+                search_city = st.text_input(tr("Escribe la ciudad *", "Enter city *", language), key=f"vet_custom_city_{search_country}_{selected_state}")
+            st.caption(tr("Listas de ciudades frecuentes. Si no aparece la tuya, elige Otra ciudad.",
+                          "Common cities are listed. If yours is missing, select Other city.", language))
+            c1, c2 = st.columns(2)
             with c1:
-                search_city = st.text_input(tr("Ciudad", "City",language), value=city)
-                search_species = st.selectbox(tr("Especie", "Species",language), list(species_choices),
-                                               index=list(species_choices).index(species),
-                                               format_func=lambda s: s if language=="Español" else species_choices[s])
+                search_species = st.selectbox(tr("Especie", "Species", language), list(SPECIES_CHOICES),
+                                               index=list(SPECIES_CHOICES).index(species),
+                                               format_func=lambda value: value if language == "Español" else SPECIES_CHOICES[value],
+                                               key="vet_species")
             with c2:
-                search_state = st.text_input(tr("Estado / región", "State / region",language), value=region)
-                service = st.selectbox(tr("Necesidad", "Need",language),
-                                       [tr("Consulta general", "General care",language),
-                                        tr("Especialista", "Specialist",language),
-                                        tr("Hospital de emergencias", "Emergency hospital",language)])
-            submitted = st.form_submit_button(tr("Buscar opciones", "Search options",language), type="primary", use_container_width=True)
+                service = st.selectbox(tr("Tipo de atención", "Care type", language),
+                                       [tr("Consulta general", "General care", language),
+                                        tr("Especialista", "Specialist", language),
+                                        tr("Hospital de emergencias", "Emergency hospital", language)], key="vet_service")
+            st.caption(tr("* Ciudad obligatoria. Se buscarán hasta 3 opciones con fuentes públicas.",
+                          "* City is required. Search for up to 3 options with public sources.", language))
+            submitted = st.button(tr("Buscar veterinarios", "Find veterinarians", language), key="vet_search_submit", type="primary", use_container_width=True)
         if submitted:
-            if not search_city.strip():
+            st.session_state.locator_reply = None
+            st.session_state.pop("locator_search_details", None)
+            if not search_state.strip():
+                st.warning(tr("Escribe un estado o región.", "Enter a state or region.", language))
+            elif not search_city.strip():
                 st.warning(tr("Escribe una ciudad.", "Enter a city.",language))
             elif not os.getenv("OPENAI_API_KEY"):
                 st.warning(tr("Primero configura tu API key.", "Configure your API key first.",language))
             else:
                 query = (f"INTERNAL FICTIONAL VET LOCATOR TEST. Search web for up to three real veterinary facilities "
-                         f"for {search_species} in {search_city}, {search_state}, {country}; care type: {service}. "
+                         f"for {search_species} in {search_city}, {search_state}, {search_country}; care type: {service}. "
                          "Only include results with sources. Provide grounded address and URL. Do not invent services, hours, "
                          "availability, phone numbers, partnerships or bookings. Recommend contacting clinics to confirm "
                          f"species suitability. Respond in {'Spanish' if language == 'Español' else 'English'}.")
                 try:
                     with st.spinner(tr("Buscando fuentes públicas…", "Searching public sources…",language)):
                         st.session_state.locator_reply = ask(query, True, None)
+                        st.session_state.locator_search_details = " · ".join([
+                            search_city.strip(), search_state.strip(), search_country,
+                            search_species if language == "Español" else SPECIES_CHOICES[search_species], service,
+                        ])
                 except Exception as ex:
                     st.error(tr("La búsqueda no pudo completarse.", "Search failed.",language))
                     st.caption(type(ex).__name__)
         res = st.session_state.locator_reply
+        if not res and not submitted:
+            st.info(tr("Aquí aparecerán hasta 3 opciones con sus fuentes. Después de buscar, revisa los datos y contacta directamente a la clínica para confirmar que atiende a tu especie y tiene disponibilidad.",
+                       "Up to 3 options and their sources will appear here. After searching, review the details and contact the clinic directly to confirm species coverage and availability.", language))
         if res:
+            st.subheader(tr("Resultados de búsqueda", "Search results", language))
+            if st.session_state.get("locator_search_details"):
+                st.caption(st.session_state.locator_search_details)
             st.markdown(res.text)
             sources_panel(res.sources, "locator_sources")
             st.info(tr("Los resultados no son socios verificados de PetsRWise. Verifica por teléfono que atiendan la especie y estén disponibles.",

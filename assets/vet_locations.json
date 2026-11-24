@@ -1,0 +1,111 @@
+{
+  "Estados Unidos": {
+    "Florida": [
+      "Miami",
+      "Orlando",
+      "Tampa",
+      "Jacksonville",
+      "Fort Lauderdale"
+    ],
+    "California": [
+      "Los Angeles",
+      "San Diego",
+      "San Francisco",
+      "Sacramento"
+    ],
+    "Texas": [
+      "Houston",
+      "Dallas",
+      "Austin",
+      "San Antonio"
+    ],
+    "New York": [
+      "New York City",
+      "Buffalo",
+      "Albany",
+      "Rochester"
+    ],
+    "New Jersey": [
+      "Newark",
+      "Jersey City",
+      "Trenton",
+      "Paterson"
+    ],
+    "Illinois": [
+      "Chicago",
+      "Springfield",
+      "Aurora"
+    ],
+    "Pennsylvania": [
+      "Philadelphia",
+      "Pittsburgh",
+      "Harrisburg"
+    ],
+    "Washington": [
+      "Seattle",
+      "Tacoma",
+      "Olympia",
+      "Spokane"
+    ],
+    "Georgia": [
+      "Atlanta",
+      "Savannah",
+      "Augusta"
+    ],
+    "Arizona": [
+      "Phoenix",
+      "Tucson",
+      "Scottsdale"
+    ]
+  },
+  "Venezuela": {
+    "Distrito Capital": [
+      "Caracas"
+    ],
+    "Miranda": [
+      "Los Teques",
+      "Guarenas",
+      "Guatire"
+    ],
+    "Zulia": [
+      "Maracaibo",
+      "Cabimas",
+      "Ciudad Ojeda"
+    ],
+    "Carabobo": [
+      "Valencia",
+      "Puerto Cabello",
+      "Guacara"
+    ],
+    "Aragua": [
+      "Maracay",
+      "Turmero",
+      "La Victoria"
+    ],
+    "Lara": [
+      "Barquisimeto",
+      "Cabudare",
+      "Carora"
+    ],
+    "Anzoátegui": [
+      "Barcelona",
+      "Puerto La Cruz",
+      "El Tigre"
+    ],
+    "Bolívar": [
+      "Ciudad Bolívar",
+      "Ciudad Guayana",
+      "Upata"
+    ],
+    "Táchira": [
+      "San Cristóbal",
+      "Táriba",
+      "San Antonio del Táchira"
+    ],
+    "Falcón": [
+      "Coro",
+      "Punto Fijo",
+      "Chichiriviche"
+    ]
+  }
+}
