@@ -159,6 +159,20 @@ st.markdown("""
 [data-testid="stChatInput"] > div{max-width:none!important;border-radius:26px!important;border:1px solid #E7DFE6!important;background:#FFFFFF!important;box-shadow:0 8px 28px #34213718!important;min-height:58px!important;}
 [data-testid="stChatInput"] textarea{min-height:58px!important;max-height:120px!important;border:0!important;border-radius:26px!important;padding:15px 18px!important;font-family:'Avenir Next',sans-serif!important;font-size:.96rem!important;resize:none!important;}
 [data-testid="stChatInput"] button{border-radius:50%!important;}
+/* Match conversation and welcome options to the typing field. */
+.st-key-alma_main_content [data-testid="stMarkdownContainer"] p,
+.st-key-alma_main_content [data-testid="stMarkdownContainer"] li,
+.st-key-alma_main_content .stButton button,
+.st-key-alma_main_content .stButton button p,
+.st-key-alma_main_content .prw-hero-sub,
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
+[data-testid="stChatInput"] textarea{
+  font-family:'Avenir Next',sans-serif!important;
+  font-size:.96rem!important;
+  font-weight:400!important;
+  line-height:1.55!important;
+}
+
 [data-testid="stExpander"]{border:1px solid #EFE6EE;border-radius:14px;background:#fff;}
 [data-testid="stAlert"]{border-radius:14px;}
 [data-testid="stTextInput"] input,[data-testid="stSelectbox"]>div{border-radius:12px;}
@@ -254,6 +268,7 @@ with st.sidebar:
     routes = {
         "chat": tr("💬 Hablar con ALMA", "💬 Chat with ALMA", language),
         "locator": tr("📍 Buscar veterinario", "📍 Find a veterinarian", language),
+        "public_spaces": "PetsRWise Alma Public Spaces",
         "about": tr("ⓘ Conocer ALMA", "ⓘ About ALMA", language),
     }
     st.radio("Navegación" if language == "Español" else "Navigation",
@@ -367,14 +382,15 @@ def ask(question: str, do_web: bool, previous: str | None):
                     previous_response_id=previous, use_web_search=do_web, model=model)
 
 with st.container(key="alma_main_content"):
-    st.markdown(f"""<header class="prw-bar"><div class="prw-brand"><img class="prw-brand-logo" src="{uri('petsrwise_icon.png')}" alt="PetsRWise"><div><span class="prw-brand-name"><span class="prw-wordmark">PetsRWise</span> <b>Alma</b></span><span class="prw-brand-lab">Veterinary AI LAB</span></div></div></header>""",unsafe_allow_html=True)
+    if st.session_state.nav != "public_spaces":
+        st.markdown(f"""<header class="prw-bar"><div class="prw-brand"><img class="prw-brand-logo" src="{uri('petsrwise_icon.png')}" alt="PetsRWise"><div><span class="prw-brand-name"><span class="prw-wordmark">PetsRWise</span> <b>Alma</b></span><span class="prw-brand-lab">Veterinary AI LAB</span></div></div></header>""",unsafe_allow_html=True)
     if st.session_state.nav == "locator":
         st.markdown(f"""<section class="prw-locator-intro">
         <div class="prw-locator-label">{tr('BUSCADOR VETERINARIO', 'VETERINARY SEARCH', language)}</div>
         <h1>{tr('Encuentra opciones veterinarias en tu ciudad', 'Find veterinary options in your city', language)}</h1>
         <p>{tr('Alma te ayuda a localizar clínicas y hospitales según la especie y el tipo de atención que buscas. Completa el formulario y pulsa Buscar veterinarios.', 'Alma helps you find clinics and hospitals for your animal’s species and care needs. Complete the form and select Find veterinarians.', language)}</p>
         </section>""", unsafe_allow_html=True)
-    else:
+    elif st.session_state.nav != "public_spaces":
         st.markdown(f"""<section class="prw-hero"><img class="prw-face" src="{uri('portrait_mockup.png')}" alt="Foto ilustrativa de ALMA">
         <div><div class="prw-hero-title">{tr('Hola, soy','Hello, I’m',language)} <b>ALMA</b></div>
         <div class="prw-hero-sub">{tr('Tu asistente de IA para bienestar animal, información y orientación hacia atención veterinaria.','Your AI assistant for animal wellness information and finding veterinary services.',language)}</div>
@@ -575,6 +591,8 @@ with st.container(key="alma_main_content"):
                        "Results are not verified PetsRWise partners. Call to confirm species coverage and availability.",language))
         st.caption(tr("Sin GPS ni reservas automáticas. Para una emergencia real, no demores buscando en esta demo.",
                       "No GPS or automatic bookings. For a real emergency, don't delay care to use this demo.", language))
+    elif st.session_state.nav == "public_spaces":
+        st.image(str(ASSETS / "alma_public_spaces.png"), use_container_width=True)
     else:
         st.markdown(f"<div class='prw-section'>✨ {tr('Conoce ALMA','About ALMA',language)}</div>",unsafe_allow_html=True)
         st.write(tr("ALMA es una asistente de IA de PetsRWise para educación general, organización de preguntas y descubrimiento de opciones de atención veterinaria.",
@@ -583,5 +601,6 @@ with st.container(key="alma_main_content"):
                    "This build uses draft clinical knowledge. It is not a veterinarian and is not ready for real cases.",language))
         st.markdown(tr("**Próximas funciones:** videopersona sincronizada, directorio de clínicas verificadas y transferencia a profesionales acreditados.",
                        "**Upcoming:** lip-synced avatar, verified hospital directory, and handoff to licensed professionals.",language))
-    st.markdown("<div class='prw-footer'>© PetsRWise · ALMA Web v0.7 · "
-                "<a href='https://www.petsrwise.com/' target='_blank' rel='noopener noreferrer'>petsrwise.com</a></div>",unsafe_allow_html=True)
+    if st.session_state.nav != "public_spaces":
+        st.markdown("<div class='prw-footer'>© PetsRWise · ALMA Web v0.7 · "
+                    "<a href='https://www.petsrwise.com/' target='_blank' rel='noopener noreferrer'>petsrwise.com</a></div>",unsafe_allow_html=True)
